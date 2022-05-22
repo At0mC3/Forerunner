@@ -146,7 +146,7 @@ MachineLoopStart:
     jmp MachineLoopStart
 
     jump_table:
-        dq LdrFunction - start, 0
+        dq LdrFunction - start, LdmFunction - start
         dq LdImmFunction - start, kVAdd - start
         dq kVSub - start, 0
         dq kVSvr - start, kVSvm - start
@@ -161,6 +161,14 @@ MachineLoopStart:
         VPush r9
         
         add rsi, 4 ; Add four to go to the next instruction
+        ret
+
+    LdmFunction:
+        VPop r9
+        mov r9, qword [r9]
+        VPush r9
+
+        add rsi, 4
         ret
 
     LdImmFunction:
