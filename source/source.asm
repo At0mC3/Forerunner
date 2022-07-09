@@ -4,6 +4,7 @@ format MS64 COFF
 ; RBP = Bottom of the stack
 ; edi = Virtual instruction holder
 
+; This macro stores the current of the registers inside the vm context
 macro StoreRegisters {
     store_register_beg:
     pushfq ; Push the flags
@@ -32,8 +33,7 @@ macro StoreRegisters {
     store_register_end:
 }
 
-macro MountRegisters {
-    ; Restore the original RAX
+macro MapRegistersBack {
     mov rax, qword [rax-128]
     mov r15, qword [rbp - 120]
     mov r14, qword [rbp - 112]
@@ -47,7 +47,13 @@ macro MountRegisters {
     mov rsi, qword [rbp - 48]
     mov rdx, qword [rbp - 24]
     mov rcx, qword [rbp - 16]
-    mov rbx, qword [rbp - 8]
+    mov rbx, qword [rbp - 8]   
+}
+
+; This macro restores the states of the registers
+macro MountRegisters {
+    ; Restore the original RAX
+    MapRegistersBack
 
     mov rsp, rbp
     popfq ; Restore the flag registers
@@ -240,19 +246,7 @@ MachineLoopStart:
         ret
 
     kVmSwitch:
-        mov rax, qword [rax - 128]
-        mov r15, qword [rbp - 120]
-        mov r14, qword [rbp - 112]
-        mov r13, qword [rbp - 104]
-        mov r12, qword [rbp - 96]
-        mov r11, qword [rbp - 88]
-        mov r10, qword [rbp - 80]
-        mov r9, qword [rbp - 72]
-        mov r8, qword [rbp - 64]
-        mov rdi, qword [rbp - 56]
-        mov rdx, qword [rbp - 24]
-        mov rcx, qword [rbp - 16]
-        mov rbx, qword [rbp - 8]
+        MapRegistersBack
 
         mov rsp, rbp
         popfq ; Restore the flag registers
@@ -271,19 +265,7 @@ MachineLoopStart:
         ret
 
     kVmExit2:
-        mov rax, qword [rax-128]
-        mov r15, qword [rbp - 120]
-        mov r14, qword [rbp - 112]
-        mov r13, qword [rbp - 104]
-        mov r12, qword [rbp - 96]
-        mov r11, qword [rbp - 88]
-        mov r10, qword [rbp - 80]
-        mov r9, qword [rbp - 72]
-        mov r8, qword [rbp - 64]
-        mov rdi, qword [rbp - 56]
-        mov rsi, qword [rbp - 48]
-        mov rdx, qword [rbp - 24]
-        mov rbx, qword [rbp - 8]
+        MapRegistersBack
 
         mov rsp, rbp
         popfq ; Restore the flag registers
