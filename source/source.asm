@@ -82,8 +82,28 @@ macro InitVCodePtr {
     pop rsi
     sub rsi, delta - start
     mov qword [rbp - 152], rsi ; Store the delta in the stack
+
+    mov rcx, qword [rbp - 144]
+    mov ecx, ecx
+    xor rdx, rdx
+    jmp ob1
+
+    ob3:
     ; Add the vcode offset to the delta
-    add rsi, qword [rbp - 144]
+    add rsi, rcx
+    jmp ob2
+
+    ob1:
+        mov dx, cx
+        and dx, 0x00FF
+        shl dx, 8
+        mov r15w, cx
+        shr rcx, 16
+        shr r15w, 8
+        mov dl, r15b
+        xor cx, dx
+        jmp ob3
+    ob2:
 }
 
 macro DecodeInstruction {
@@ -150,7 +170,8 @@ MachineLoopStart:
         dq LdImmFunction - start, kVAdd - start
         dq kVSub - start, 0
         dq kVSvr - start, kVSvm - start
-        dq 0, kVmExit - start
+        dq kVmSwitch - start, kVmExit - start
+        dq kVmExit2 - start
 
     LdrFunction:
         shr edi, 16 ; Shift 16 bits to the right to clear out the command bytes
@@ -218,6 +239,65 @@ MachineLoopStart:
         add rsi, 4 ; Add four to go to the next instruction
         ret
 
+    kVmSwitch:
+        mov rax, qword [rax - 128]
+        mov r15, qword [rbp - 120]
+        mov r14, qword [rbp - 112]
+        mov r13, qword [rbp - 104]
+        mov r12, qword [rbp - 96]
+        mov r11, qword [rbp - 88]
+        mov r10, qword [rbp - 80]
+        mov r9, qword [rbp - 72]
+        mov r8, qword [rbp - 64]
+        mov rdi, qword [rbp - 56]
+        mov rdx, qword [rbp - 24]
+        mov rcx, qword [rbp - 16]
+        mov rbx, qword [rbp - 8]
+
+        mov rsp, rbp
+        popfq ; Restore the flag registers
+
+        mov rsp, qword [rbp - 32] ; Restore the rsp
+
+        add rsi, 0x04 ; Skip over the kVmSwitch instruction
+        push rsi ; Push the ret address to return
+        mov rsi, qword [rbp - 48] ; Restore RSI
+
+        mov rbp, qword [rbp - 40] ; RBP LAST
+        ret
+
     kVmExit:
         MountRegisters
+        ret
+
+    kVmExit2:
+        mov rax, qword [rax-128]
+        mov r15, qword [rbp - 120]
+        mov r14, qword [rbp - 112]
+        mov r13, qword [rbp - 104]
+        mov r12, qword [rbp - 96]
+        mov r11, qword [rbp - 88]
+        mov r10, qword [rbp - 80]
+        mov r9, qword [rbp - 72]
+        mov r8, qword [rbp - 64]
+        mov rdi, qword [rbp - 56]
+        mov rsi, qword [rbp - 48]
+        mov rdx, qword [rbp - 24]
+        mov rbx, qword [rbp - 8]
+
+        mov rsp, rbp
+        popfq ; Restore the flag registers
+
+        mov rsp, qword [rbp - 32] ; Restore the rsp
+
+        call delta2
+        delta2:
+        pop rcx
+        sub rcx, delta2 - start
+        sub rcx, qword [rbp - 136]
+        push rcx ; Push the ret address to return
+        mov rcx, qword [rbp - 16]
+
+        mov rbp, qword [rbp - 40] ; RBP LAST
+        
         ret
